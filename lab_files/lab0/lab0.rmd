@@ -10,16 +10,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Wykonanie kodu R
 
-Każda wykonywalna komórka ma nagłówek \{id języka [opcjonalna nazwa]\}
+Każda wykonywalna komórka ma nagłówek {id języka [opcjonalna nazwa]}
 
-```{r cars} 
+```{r cars}
 summary(cars)
 ```
 
 ## Wykonanie kodu python
 
-Jak widać poniżej, aby wykonać komórkę pythonową z wykorzystaniem reticulate,
-wystarczy podać odpowiedni id języka.
+Jak widać poniżej, aby wykonać komórkę pythonową z wykorzystaniem reticulate, wystarczy podać odpowiedni id języka.
 
 ```{python}
 import pandas as pd
@@ -27,8 +26,7 @@ cars_df = pd.DataFrame(r.cars)
 cars_df.describe()
 ```
 
-Mieszanie komórek w różnych językach zyskuje sens dzięki temu,
-że ich środowiska wykonawcze mają wzajemny dostęp do swojego stanu.
+Mieszanie komórek w różnych językach zyskuje sens dzięki temu, że ich środowiska wykonawcze mają wzajemny dostęp do swojego stanu.
 
 ```{python}
 from snippet import utility_function
@@ -36,6 +34,4 @@ from snippet import utility_function
 utility_function("input")
 ```
 
-Możemy również importować kod z plików .py, lub .r, gdzie wygodniej będzie
-zaimplementować bardziej złożone funkcjonalności. Wtedy notebooki wykorzystujemy
-do wygodnej prezentacji wyników.
+Możemy również importować kod z plików .py, lub .r, gdzie wygodniej będzie zaimplementować bardziej złożone funkcjonalności. Wtedy notebooki wykorzystujemy do wygodnej prezentacji wyników.
