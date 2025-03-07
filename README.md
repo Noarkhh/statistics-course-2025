@@ -15,6 +15,6 @@ Aby zsynchronizować zainstalowane pakiety i uruchomić pliki .rmd, nalezy wykon
  2. Otworzenie projektu w RStudio (File -> Open Project -> Wybranie pliku SwSI.Rproj). Spowoduje to automatyczne pobranie pakietu kontroli wersji renv.
  3. Zainstalowanie zależności R (renv::restore()). 
  4. Utworzenie środowiska wirtualnego python (python -m venv venv), aktywowanie go oraz zainstalowanie zależności (pip install -r requirements.txt).
- 5. Wskazanie w Rstudio interpretera python (Tools -> Global Options -> Python)
+ 5. Wskazanie w Rstudio interpretera python (Tools -> Global Options -> Python) na plik wykonwalny ze środowiska wirtualnego
 
 Po wykonaniu powyższych należy zweryfikować działanie wykonując komórki w notebooku lab0.rmd
