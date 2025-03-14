@@ -8,14 +8,45 @@ output: html_document
 
 1.  Czas oczekiwania na pewne zdarzenie ma rozkład Gamma(3, r). Wykonano serię pomiarów i uzyskano czasy 1.4, 1.8, 1.4, 1.4 i 1.5. Oblicz estymatę największej wiarygodności parametru r.
 
-```         
+```{r dat}
+
+data <- c(1.4, 1.8, 1.4, 1.4, 1.5)
+
+log_likelihood_gamma <- function(scale) {
+  sum(dgamma(data, shape = 3, scale = scale, log = TRUE))
+}
+
+scales <- seq(0.001, 5, by = 0.01)
+
+mle_scale <- scales[which.max(sapply(scales, log_likelihood_gamma))]
+cat("MLE for scale:", mle_scale)
+
+```
+
+```{r}
+x_dgamma <- seq(0, 5, by = 0.04) 
+y_dgamma <- dgamma(x_dgamma, shape = 3, scale = 0.5)
+plot(x_dgamma, y_dgamma)
 ```
 
 2.  Plik goals.csv zawiera dane o liczbie goli strzelonych przez pewną drużynę piłkarską w kolejnych meczach. Zakładamy, że liczba goli ma rozkład Poissona o nieznanej wartości λ. Wyznacz estymator największej wiarygodności parametru λ.
 
 ```{r dat}
 goals = read.table("goals.csv")
-summary(goals)
+log_likelihood_pois <- function(lambda) {
+  sum(dpois(goals$V1, lambda = lambda, log = TRUE))
+}
+#goals$V1
+lambdas <- seq(0.001, 5, by = 0.01)
+mle_lambda <- lambdas[which.max(sapply(lambdas, log_likelihood_pois))]
+cat("MLE for lambda:", mle_lambda)
+#log_likelihood_pois(0.000)
+```
+
+```{r}
+x_dgamma <- seq(0, 5) 
+y_dgamma <- dpois(x_dgamma, lambda = 1.6)
+plot(x_dgamma, y_dgamma)
 ```
 
 ```{python dat}
