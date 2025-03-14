@@ -34,4 +34,5 @@ from snippet import utility_function
 utility_function("input")
 ```
 
-Możemy również importować kod z plików .py, lub .r, gdzie wygodniej będzie zaimplementować bardziej złożone funkcjonalności. Wtedy notebooki wykorzystujemy do wygodnej prezentacji wyników.
+Możemy również importować kod z plików .py, lub .r, gdzie wygodniej będzie zaimplementować bardziej złożone funkcjonalności.
+Wtedy notebooki wykorzystujemy do wygodnej prezentacji wyników.
