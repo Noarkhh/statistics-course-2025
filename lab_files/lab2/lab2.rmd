@@ -61,17 +61,25 @@ A pythonowego odpowiednio:
 
 ```{python import}
 from naive_bayes import NaiveBayes
+
+```
+
+```{python}
+
+naive_bayes = NaiveBayes()
+naive_bayes.fit(train_df)
+naive_bayes.accuracy(test_df)
 ```
 
 Po ukończeniu pierwszego zadania należy podjąć się usprawnienia
 klasyfikatora. W tym celu można na przykład:\
 a) usprawnić tokenizację danych tekstowych, może niektóre z nich można
 pominąć\
-b) zastosować wygładzenie Laplace'a, by odpowiednio potraktować sytuacje,\
-gdy w zbiorze treningowym pojawia się niewidziane wcześniej słowo
-c) rozszerzyć klasyfikator tak, by brał pod uwagę ilość wystąpień
-wyrazów (Multinomial Naїve Bayes)\
-
+b) zastosować wygładzenie Laplace'a, by odpowiednio potraktować
+sytuacje,\
+gdy w zbiorze treningowym pojawia się niewidziane wcześniej słowo c)
+rozszerzyć klasyfikator tak, by brał pod uwagę ilość wystąpień wyrazów
+(Multinomial Naїve Bayes)\
 
 Jako, że obecny klasyfikator już radzi sobie bardzo dobrze, można
 utrudnić zadanie poprzez podzielenie zbioru treningowego i testowego w
