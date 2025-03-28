@@ -49,3 +49,53 @@ Zadanie dotyczy zbioru UCI Air Quality
 
 2.  Porównaj modele regresji wielomianowej stężenia CO względem ozonu
     PT08_S5_O3 dla różnych stopni wykorzystanego wielomianu.
+
+```{r}
+library(reticulate)
+
+air_quality_df <- py$air_quality_df
+fit_air <- lm(CO ~ Date + Time + PT08_S1_CO + NMHC + Benzene + PT08_S2_NMHC + NOx + PT08_S3_NOx + NO2 + PT08_S4_NO2 + PT08_S5_O3 + Temperature + RelativeHumidity + AbsoluteHumidity, data=air_quality_df)
+fit_air <- lm(CO ~ NMHC + Benzene + NOx + NO2 + PT08_S2_NMHC, data=air_quality_df)
+
+#fit_air <- lm(CO ~ NO2, data=air_quality_df)
+summary(fit_air)
+```
+
+```{python}
+import statsmodels.formula.api as smf
+air_quality_df = air_quality_df[air_quality_df.CO >= 0]
+
+air_model = smf.ols('CO ~ Temperature + NMHC + NO2 + PT08_S2_NMHC + NOx', data=air_quality_df).fit()
+print(air_model.summary())
+
+```
+
+```{python}
+import plotly.express as px
+
+air_quality_df['predicted_model'] = air_model.predict(air_quality_df)
+
+fig1 = px.scatter(
+    air_quality_df, 
+    x='CO', 
+    y='predicted_model',
+    title='Actual vs Predicted CO (Formula API)',
+    labels={'CO': 'Actual CO', 'predicted_model': 'Predicted CO'},
+    trendline='ols'
+)
+fig1.show()
+```
+
+---
+Trzeba było wyfiltrować wszystkie wartości CO równe -200. Wybrałem zmienne opisujące Temperature + NMHC + NO2 + PT08_S2_NMHC + NOx, najbardziej znacząca okazała się PT08_S2_NMHC (t value 105.188), wyszło Adj. R-squared równe 0.861, więc całkiem nieźle
+---
+
+```{python}
+air_model_ozone = smf.ols('CO ~ PT08_S5_O3 + I(PT08_S5_O3**2) + I(PT08_S5_O3**3) + I(PT08_S5_O3**4)', data=air_quality_df).fit()
+print(air_model_ozone.summary())
+```
+
+Najlepiej wyszło dla maksymalnej potęgi 4, Adjusted R squared równe 0.7,
+wartość maleje wraz z potęgami, ale wyższe również są znaczące. Co
+ciekawe dla maksymalnej potęgi 3 najbardziej znaczący był ozon w
+kwadracie.
