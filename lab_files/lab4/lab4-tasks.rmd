@@ -20,20 +20,72 @@ head(winequality_white)
 
 1.  Do obu tabel winequality_white i winequality_red należy dodać kolumnę type zawierającą zmienną kategoryczną o wartości odpowiednio 'white' i 'red'. Następnie połącz tabele w jedną o nazwie winequality.
 
-```         
+```{r}
+winequality_white$type <- as.factor('white')
+winequality_red$type <- as.factor('red')
+winequality <- rbind(winequality_white, winequality_red)
+summary(winequality)
 ```
 
 2.  Dopasuj i przeanalizuj regresję logistyczną przewidującą gatunek wina.
 
-```         
+```{r}
+winequality$quality <- as.factor(winequality$quality)
+train_indices <- sample(1:nrow(winequality), size = 0.7 * nrow(winequality))
+train_data <- winequality[train_indices, ]
+test_data <- winequality[-train_indices, ]
+wine_glm_model <- glm(type ~ ., family = binomial, data = train_data)
+summary(wine_glm_model)
+```
+```{r}
+wine_pred <- predict(wine_glm_model, newdata = test_data, type = "response")
+predicted_classes <- ifelse(wine_pred > 0.5, 1, 0)
+confusion_matrix <- table(Predicted = predicted_classes, Actual = test_data$type)
+print(confusion_matrix)
 ```
 
 3.a) Dopasuj i przeanalizuj regresję porządkową przewidującą jakość wina.
 
-```         
+```{r}         
+library(MASS)
+library(magrittr)
+wine_quality_model <- polr(quality ~ ., method = "logistic", data = train_data)
+quality_result <- predict(wine_quality_model, test_data)
+quality_confusion_matrix <- table(Predicted = quality_result, Actual = test_data$quality)
+print(quality_confusion_matrix)
+accuracy <- (sum(diag(quality_confusion_matrix))) / sum(quality_confusion_matrix)
+cat("Accuracy:", round(accuracy, 3), "\n")
 ```
 
 3.b) Porównaj wyniki z wybranym innym modelem spośród knn, lda, qda (w pythonie dostępne w bibliotece sciki-learn).
+```{r}         
+quality_lda <- lda(quality ~ ., data = train_data)
+quality_lda_pred <- predict(quality_lda, newdata = test_data)
+quality_lda_conf_mat <- table(Predicted = quality_lda_pred$class, Actual = test_data$quality)
+quality_lda_accuracy <- (sum(diag(quality_lda_conf_mat))) / sum(quality_lda_conf_mat)
+cat("LDA accuracy: ", round(quality_lda_accuracy, 3), "\n")
+print(quality_lda_conf_mat)
+```
 
-```         
+```{r}         
+quality_qda <- qda(quality ~ ., data = train_data)
+quality_qda_pred <- predict(quality_qda, newdata = test_data)
+quality_qda_conf_mat <- table(Predicted = quality_qda_pred$class, Actual = test_data$quality)
+quality_qda_accuracy <- (sum(diag(quality_qda_conf_mat))) / sum(quality_qda_conf_mat)
+cat("LDA accuracy: ", round(quality_qda_accuracy, 3), "\n")
+print(quality_qda_conf_mat)
+```
+
+```{r}
+library(class)
+train_x <- model.matrix(quality ~ ., data = train_data)[,-1]
+test_x <- model.matrix(quality ~ ., data = test_data)[,-1]
+train_y <- train_data$quality
+
+set.seed(123)
+quality_knn <- knn(train_x, test_x, train_y, k = 5)
+quality_knn_conf_mat <- table(Predicted = quality_knn, Actual = test_data$quality) 
+quality_knn_accuracy <- (sum(diag(quality_knn_conf_mat))) / sum(quality_knn_conf_mat)
+cat("KNN accuracy: ", round(quality_knn_accuracy, 3), "\n")
+print(quality_knn_conf_mat)
 ```
