@@ -121,6 +121,30 @@ for nvar, model in best_models.items():
   print(f"{nvar}: variables: {model['vars']}, bic: {model['model'].bic}, aic: {model['model'].aic}")
 ```
 
+```{r}
+cp_min <- which.min(Hitters_sub_sum$cp)
+cp_min
+Hitters_sub_sum$cp[cp_min]
+```
+
+```{r}
+plot(Hitters_sub_sum$cp, xlab = "Liczba zmiennych", ylab = "CP", col = "green",
+     type = "b", pch = 20)
+points(cp_min, Hitters_sub_sum$cp[cp_min], col = "red", pch = 9)
+```
+
+```{r}
+adjr2_max <- which.max(Hitters_sub_sum$adjr2)
+adjr2_max
+Hitters_sub_sum$adjr2[adjr2_max]
+```
+
+```{r}
+plot(Hitters_sub_sum$adjr2, xlab = "Liczba zmiennych", ylab = "Adjusted R^2", col = "green",
+     type = "b", pch = 20)
+points(adjr2_max, Hitters_sub_sum$adjr2[adjr2_max], col = "red", pch = 9)
+```
+
 [**Wykonaj podobną analizę dla innych kryteriów optymalności:** $C_p$ i
 poprawionego $R^2$. Zwróć uwagę na to, że poprawione $R^2$ powinno być
 *zmaksymalizowane*.]
@@ -189,6 +213,22 @@ X_sel
 [**Które podzbiory predyktorów są optymalne w selekcji krokowej w przód
 i wstecz według kryteriów BIC,** $C_p$ i poprawionego $R^2$? Czy któreś
 z nich są faktycznie najlepsze?]
+
+```{r cp}
+Hitters_fwd <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19, method = "forward")
+Hitters_fwd_sum <- summary(Hitters_fwd)
+best <- which.min(Hitters_fwd_sum$cp)
+print(sum(xor(Hitters_fwd_sum$which[best, ], Hitters_sub_sum$which[best, ])))
+
+Hitters_bwd <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19, method = "backward")
+Hitters_bwd_sum <- summary(Hitters_fwd)
+best <- which.min(Hitters_fwd_sum$cp)
+print(sum(xor(Hitters_fwd_sum$which[best, ], Hitters_sub_sum$which[best, ])))
+```
+
+```{r}
+
+```
 
 ### Wybór modelu przy pomocy metody zbioru walidacyjnego
 
@@ -436,7 +476,8 @@ fit_lasso_full <- glmnet(X, y, alpha = 1)
 predict(fit_lasso_full, s = cv_out$lambda.min, type = "coefficients")[1:20,]
 ```
 
-I jeszcze wersja pythonowa w scikit-learn. Najpierw zaimportowanie bibliotek.
+I jeszcze wersja pythonowa w scikit-learn. Najpierw zaimportowanie
+bibliotek.
 
 ```{python}
 import plotly.graph_objects as go
@@ -557,7 +598,6 @@ fig2.update_yaxes(title_text='Coefficient Value', row=1, col=2)
 
 fig2.show()
 ```
-
 
 [**Jak teraz wygląda porównanie z regresją grzbietową?**]
 
