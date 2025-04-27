@@ -5,6 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(MASS)
 ```
 
 ### Zadanie 1
@@ -15,6 +16,35 @@ Licząc błąd średniokwadratowy na tym zbiorze ustal optymalny stopień wielom
 (między 1 a 10) w regresji wielomianowej `medv` względem `lstat` (modele mają
 być uczone na danych nienależących do zbioru walidacyjnego). Optymalnym modelem
 jest ten, który uzyskuje najmniejszą estymatę błędu testowego.
+
+```{r}
+train_indices <- sample(1:nrow(Boston), size = 0.8 * nrow(Boston))
+train_data <- Boston[train_indices, ]
+test_data <- Boston[-train_indices, ]
+summary(train_data)
+```
+
+```{r}
+for (degree in 1:10) {
+  fit_poly <- lm(medv ~ poly(lstat, degree), data = train_data)
+  pred_poly <- predict(fit_poly, test_data, se.fit = TRUE)
+  print(mean((pred_poly$fit - test_data$medv) ^ 2))
+}
+```
+Best MSE for degree 6
+
+```{r}
+fit_poly_5 <- lm(medv ~ poly(lstat, 5), data = train_data)
+age_lims <- range(test_data$lstat)
+age_grid <- seq(age_lims[1], age_lims[2])
+
+pred_poly <- predict(fit_poly_5, list(lstat = age_grid), se.fit = TRUE)
+se_bands <- cbind(pred_poly$fit + 2 * pred_poly$se.fit, pred_poly$fit - 2 * pred_poly$se.fit)
+
+plot(medv ~ lstat, data = test_data, col = "darkgrey", cex = 0.5, xlim = age_lims)
+lines(age_grid, pred_poly$fit, col = "red", lwd = 2)
+matlines(age_grid, se_bands, col = "red", lty = "dashed")
+```
 
 ### Zadanie 2
 
@@ -51,14 +81,14 @@ Po pierwsze dopasuj model regresji Poissonowskiej (liczba pierścieni jest
 oczywiście całkowita).
 
 ```{r}
-abalone_fit_0 <- glm(1 ~ 1)
+abalone_fit_0 <- glm(Rings ~ . - Whole_weight, family = "poisson", data = abalone)
 summary(abalone_fit_0)
 ```
 
 Następnie usuń nieistotne predyktory (być może trzeba to będzie zrobić krokowo).
 
 ```{r}
-abalone_fit <- glm(1 ~ 1)
+abalone_fit <- glm(Rings ~ . - Whole_weight - Length - Viscera_weight, family = "poisson", data = abalone)
 summary(abalone_fit)
 ```
 
@@ -70,7 +100,7 @@ wygładzające (wygładzające funkcje sklejane albo regresję lokalną).
 ```{r}
 library(gam)
 
-abalone_n_fit <- gam(1 ~ 1)
+abalone_n_fit <- gam(Rings ~ . - Whole_weight - Length - Viscera_weight, family = "poisson", data = abalone)
 summary(abalone_n_fit)
 ```
 
@@ -79,19 +109,22 @@ test wykazał istotność części nieparametrycznej.
 
 Porównaj oba finalne modele przy pomocy testów ANOVA. Który model jest lepszy?
 
-```{}
+```{r}
+anova(abalone_fit, abalone_n_fit)
 ```
 
 Wykonaj PDP dla obu modeli.
 
 PDP dla modelu bez składników nieparametrycznych.
 
-```{}
+```{r}
+plot(abalone_fit, col = "red", se = TRUE)
 ```
 
 PDP dla modelu ze składnikami nieparametrycznymi.
 
-```{}
+```{r}
+plot(abalone_n_fit, col = "red", se = TRUE)
 ```
 
 ### Zagadnienia dla zainteresowanych
