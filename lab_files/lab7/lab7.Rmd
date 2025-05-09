@@ -79,6 +79,7 @@ sales_high_tree
 ```
 
 [**1. Które predyktory są najbardziej istotne?**]
+Najbardziej istotne są te, które znajdują się wysoko w drzewie, ponieważ najskuteczniej je dzielą. Są to m.in. ShelveLoc, Price, Income.
 
 Metodą zbioru walidacyjnego estymujemy błąd testowy dla drzewa
 klasyfikacyjnego w rozważanym problemie.
@@ -163,6 +164,7 @@ $T_0$ do poddrzewa z najmniejszym poziomem błędów CV.
 
 ```{r class.tree.prune}
 size_opt <- sales_high_cv$size[which.min(sales_high_cv$dev)]
+print(size_opt)
 sales_high_pruned <- prune.misclass(sales_high_tree, best = size_opt)
 plot(sales_high_pruned)
 text(sales_high_pruned, pretty = 0)
@@ -179,6 +181,16 @@ mean(pruned_class != CarseatsH$High[test])
 
 **2. Narysuj wykres błędu testowego w zależności od rozmiaru
 poddrzewa.**
+```{r}
+accs = c()
+for (s in head(sales_high_cv$size, -1)) {
+  sales_high_pruned <- prune.misclass(sales_high_tree, best = s)
+  pruned_class <- predict(sales_high_pruned, newdata = CarseatsH[test,], type = "class")
+  acc <- mean(pruned_class == CarseatsH$High[test])
+  accs = c(accs, acc)
+}
+plot(head(sales_high_cv$size, -1), accs, type = "b")
+```
 
 Tutaj przycinanie drzewa w pythonie zgodnie z dokumentacją scikit-learn.
 Wykorzystana tam metoda jest trochę inna. Najmniej efektywne liście są
@@ -239,6 +251,8 @@ text(medv_tree)
 ```
 
 **3. Które predyktory są najistotniejsze?**
+Najistotniejsze są zdecydowanie liczba pokoi i status społeczny, wyróżniają one kilka różnych typów miejsc zamieszkania (bogate śródmieście, biedniejsze przedmieścia)
+
 
 Metodą zbioru walidacyjnego szacujemy błąd testowy.
 
@@ -262,6 +276,17 @@ plot(medv_cv$size, medv_cv$dev, type = "b")
 
 **3. Które poddrzewo jest optymalne? Jaki jest jego (estymowany) błąd
 testowy?**
+```{r}
+mses = c()
+for (s in head(medv_cv$size, -1)) {
+  medv_pruned <- prune.tree(medv_tree, best = s)
+  medv_pred <- predict(medv_pruned, newdata = Boston[test,])
+  mse <- mean((medv_pred - Boston$medv[test])^2)
+  mses <- c(mses, mse)
+}
+size_opt <- head(medv_cv$size, -1)[which.min(mses)]
+cat("Optimal size:", size_opt, "\nMSE:", min(mses))
+```
 
 Przycinanie drzewa $T_0$ do żądanego poziomu realizuje w tym przypadku
 funkcja `prune.tree()`.
@@ -273,6 +298,10 @@ text(medv_pruned)
 ```
 
 **4. Oblicz estymatę błędu testowego dla poddrzewa z 4 liśćmi.**
+```{r}
+medv_pred <- predict(medv_pruned, newdata = Boston[test,])
+mean((medv_pred - Boston$medv[test])^2)
+```
 
 pythonowy odpowiednik drzew regresji.
 
@@ -352,6 +381,12 @@ mean((medv_pred_bag - Boston$medv[test])^2)
 
 **5. Czy dla zmniejszonego zbioru uczącego zmieniła się ważność
 predyktorów?**
+```{r}
+medv_bag <- randomForest(medv ~ ., data = Boston, mtry = 13, importance = TRUE, subset = train)
+importance(medv_bag)
+varImpPlot(medv_bag)
+```
+Wygląda na to, że się zmniejszyły
 
 Powyższe dla mniejszej liczby hodowanych drzew
 
@@ -383,6 +418,18 @@ mean((medv_pred_rf - Boston$medv[test])^2)
 
 **7. Porównaj na wykresie błędy OOB dla baggingu i domyślnie
 skonfigurowanego lasu losowego.**
+```{r}
+importance(medv_rf)
+varImpPlot(medv_rf)
+```
+Kolejność jest taka sama, ale w IncNodePurity rm i lstat są większe niż w baggingu.
+
+**7. Porównaj na wykresie błędy OOB dla baggingu i domyślnie skonfigurowanego lasu losowego.**
+```{r}
+plot(1:medv_rf$ntree, medv_rf$mse, type="l", col="red", xlab="trees", ylab="mse")
+lines(1:medv_bag$ntree, medv_bag$mse, type="l", col="green")
+```
+Błąd dla baggingu większy
 
 Powyższe dla ręcznie ustawionego parametru $m$ (czyli `mtry`).
 
