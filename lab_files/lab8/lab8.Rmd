@@ -70,7 +70,7 @@ data(ToothGrowth)
 
 y <- ToothGrowth$supp # Przewidujemy typ suplementu
 x <- ToothGrowth[, c("len", "dose")] # Wybieramy predyktory - długość zęba i dawka 
-model <- xgboost(x, y, nthreads = 1, nrounds = 2)
+model <- xgboost(as.matrix(x), y, nthreads = 1, nrounds = 2)
 model
 ```
 
@@ -78,19 +78,19 @@ Prawdopodobieństwo dla ostatniej wartości zmiennej predykowanej (kwas
 askorbinowy)
 
 ```{r xgboost-pred-prob}
-predict(model, x[1:6, ], type = "response")
+predict(model, as.matrix(x[1:6, ]), type = "response")
 ```
 
 Logit
 
 ```{r xgboost-pred-prob}
-predict(model, x[1:6, ], type = "raw")
+predict(model, as.matrix(x[1:6, ]), type = "raw")
 ```
 
 Klasa o najwyższym prawdopodobieństwie
 
 ```{r xgboost-pred-class}
-predict(model, x[1:6, ], type = "class")
+predict(model, as.matrix(x[1:6, ]), type = "class")
 ```
 
 XGBoost jest najbardziej elastyczną pod względem parametryzacji z
@@ -101,7 +101,7 @@ XGBoost, w przeciwieństwie do pozostałych biliotek
 
 ```{r xgboost-params}
 y <- ToothGrowth$supp
-x <- ToothGrowth[, c("len", "dose")]
+x <- as.matrix(ToothGrowth[, c("len", "dose")])
 model_conservative <- xgboost(
     x, y, nthreads = 1,
     nrounds = 5, # Rundy to w tym wypadku ilość modeli składowych
@@ -121,6 +121,26 @@ Pełna lista parametrów:
 
 **1. Przetestuj kilka zestawów parametrów w oparciu o dokumentację. Kod
 i wnioski zawrzyj poniżej.**
+
+```{r}
+model_conservative <- xgboost(
+    x, y, nthreads = 1,
+    nrounds = 5, # Rundy to w tym wypadku ilość modeli składowych
+    max_depth = 6, # Maksymalna głębokość pojedynczego modelu
+    reg_lambda = 0.8, # Regularyzacja L2 wag w liściach
+    learning_rate = 0.15, # W jaki sposób zmniejsza się wartość kroku w algorytmie GB
+    verbose = 0, 
+)
+pred_conservative <- predict(
+    model_conservative,
+    x
+)
+print(tail(model_conservative$evaluation_log, 1))
+pred_conservative[1:6]
+```
+
+Większy max_depth zmniejsza loss, ale zwiększa przeuczanie. Potrzebna
+jest zdecydowanie większa liczba rund niż 5.
 
 Możemy analizować jakość modelu w trakcie treningu
 
@@ -147,6 +167,7 @@ xgb.model.dt.tree(model) # Dokładny opis kolejnych drzew
 ```
 
 **2. Który z predyktorów okazał się istotniejszy? Co o tym świadczy?**
+XGBoost jest zepsuty
 
 Dla prezentacji CatBoost pobierzemy zbiór danych zarobkowych z UCI. Jest
 domyślnie podzielony na treningowy i testowy, wiec dla własnych
@@ -235,16 +256,79 @@ podstawie zbioru UCI winequality
 <https://archive.ics.uci.edu/dataset/186/wine+quality>. Wybierz i
 porównaj dwa rodzaje modeli (regersji, klasyfikacji, CatBoostRanker)**
 
+```{r}
+winequality_white <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv", sep = ";")
+winequality_red <- read.csv("http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv", sep = ";")
+winequality_white$type <- as.factor('white')
+winequality_red$type <- as.factor('red')
+winequality <- rbind(winequality_white, winequality_red)
+```
+
+```{python}
+df = r.winequality
+
+X = df.drop('type', axis=1)
+y = df['type']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+cat_features = np.where(X_train.dtypes == 'category')[0]
+train_pool = Pool(X_train, y_train, cat_features=cat_features)
+test_pool = Pool(X_test, y_test, cat_features=cat_features)
+```
+
+```{python}
+model = CatBoostClassifier(
+    iterations=100,
+    depth=4,
+    learning_rate=0.1,
+    loss_function='MultiClass',
+    verbose=10
+)
+
+model.fit(train_pool)
+
+conf_mat = get_confusion_matrix(model, test_pool)
+acc = np.sum(np.diag(conf_mat)) / np.sum(conf_mat)
+print(f"Accuracy: {acc}")
+```
+
+```{python}
+
+X = df.drop('alcohol', axis=1)
+y = df['alcohol']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+cat_features = np.where(X_train.dtypes == 'category')[0]
+train_pool = Pool(X_train, y_train, cat_features=cat_features)
+test_pool = Pool(X_test, y_test, cat_features=cat_features)
+X_train.dtypes
+```
+
+```{python}
+model = CatBoostRegressor(
+    iterations=100,
+    depth=4,
+    learning_rate=0.1,
+    loss_function='RMSE',
+    verbose=10
+)
+
+model.fit(train_pool)
+
+```
+
 ## Tabela porównawcza
 
 Lepiej widoczna w trybie wizualnym
 
-| Cecha / Biblioteka           | **XGBoost**                                            | **LightGBM**                                         | **CatBoost**                                                                        |
-|------------------|------------------|------------------|-------------------|
-| **Model bazowy**             | Drzewa CART (głównie z binarnym rozgałęzieniem)        | Drzewa z podziałem liściowym (leaf-wise)             | Drzewa symetryczne (obustronnie zrównoważone)                                       |
-| **Wydajność obliczeniowa**   | Wysoka, ale wolniejsza niż LightGBM                    | Bardzo wysoka – szybkie uczenie i predykcja          | Wysoka, szczególnie przy danych kategorycznych                                      |
-| **Obsługa danych**           | Wymaga kodowania danych kategorycznych                 | Wymaga kodowania danych kategorycznych               | Wbudowana obsługa danych kategorycznych                                             |
-| **Odporność na overfitting** | Dobra, możliwość regulacji poprzez regularizację L1/L2 | Może łatwo przeuczać przy złych parametrach          | Wysoka – zastosowano m.in. techniki porządkowania (ordered boosting)                |
-| **Skalowalność**             | Dobrze skalowalny, wspiera przetwarzanie równoległe    | Bardzo dobrze skalowalny (dla dużych zbiorów)        | Skalowalny, choć gorzej niż pozostałe                                               |
-| **Zalety**                   | Stabilność, dojrzała dokumentacja, elastyczność        | Bardzo szybkie działanie, niskie zużycie pamięci     | Brak konieczności kodowania zmiennych kategorycznych, dobre wyniki „out-of-the-box” |
-| **Wady**                     | Konieczność ręcznego przygotowania danych              | Wrażliwość na przeuczenie, trudniejsza interpretacja | Dłuższy czas treningu dla danych liczbowych                                         |
+| Cecha / Biblioteka | **XGBoost** | **LightGBM** | **CatBoost** |
+|----|----|----|----|
+| **Model bazowy** | Drzewa CART (głównie z binarnym rozgałęzieniem) | Drzewa z podziałem liściowym (leaf-wise) | Drzewa symetryczne (obustronnie zrównoważone) |
+| **Wydajność obliczeniowa** | Wysoka, ale wolniejsza niż LightGBM | Bardzo wysoka – szybkie uczenie i predykcja | Wysoka, szczególnie przy danych kategorycznych |
+| **Obsługa danych** | Wymaga kodowania danych kategorycznych | Wymaga kodowania danych kategorycznych | Wbudowana obsługa danych kategorycznych |
+| **Odporność na overfitting** | Dobra, możliwość regulacji poprzez regularizację L1/L2 | Może łatwo przeuczać przy złych parametrach | Wysoka – zastosowano m.in. techniki porządkowania (ordered boosting) |
+| **Skalowalność** | Dobrze skalowalny, wspiera przetwarzanie równoległe | Bardzo dobrze skalowalny (dla dużych zbiorów) | Skalowalny, choć gorzej niż pozostałe |
+| **Zalety** | Stabilność, dojrzała dokumentacja, elastyczność | Bardzo szybkie działanie, niskie zużycie pamięci | Brak konieczności kodowania zmiennych kategorycznych, dobre wyniki „out-of-the-box” |
+| **Wady** | Konieczność ręcznego przygotowania danych | Wrażliwość na przeuczenie, trudniejsza interpretacja | Dłuższy czas treningu dla danych liczbowych |
